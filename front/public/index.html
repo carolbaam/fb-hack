@@ -31,7 +31,14 @@
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-    <div id="root"></div>
+    <div id="root">
+      <input value="+1" id="country_code" />
+<input placeholder="phone number" id="phone_number"/>
+<button onclick="smsLogin();">Login via SMS</button>
+<div>OR</div>
+<input placeholder="email" id="email"/>
+<button onclick="emailLogin();">Login via Email</button>
+    </div>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
@@ -42,5 +49,9 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script src="https://sdk.accountkit.com/en_US/sdk.js"></script>
+    
+    
+        
   </body>
 </html>

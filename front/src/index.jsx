@@ -13,6 +13,7 @@ initializeIcons();
 ReactDOM.render((
   <Router>
     <Fabric>
+     <Route exact path="/login" component={Login} />
       <Route exact path="/" component={App} />
       <Route path="/privacy" component={Privacy} />
     </Fabric>
