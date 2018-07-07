@@ -31,13 +31,18 @@
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
+    <script>
+        AccountKit_OnInteractive = function () {
+          AccountKit.init({
+            appId: '{{179059249606625}}',
+            state: '{{csrf}}',
+            version: '{{v1.1}}',
+            fbAppEventsEnabled: true,
+            redirect: '{{https://safemeet.space/}}',
+          });
+        };
+      </script>
     <div id="root">
-      <input value="+1" id="country_code" />
-<input placeholder="phone number" id="phone_number"/>
-<button onclick="smsLogin();">Login via SMS</button>
-<div>OR</div>
-<input placeholder="email" id="email"/>
-<button onclick="emailLogin();">Login via Email</button>
     </div>
     <!--
       This HTML file is a template.
