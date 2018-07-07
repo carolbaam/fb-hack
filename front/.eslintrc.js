@@ -1,15 +1,15 @@
 
 module.exports = {
     "globals":{
-        "AccountKit_OnInteractive":true,
         "AccountKit":false,
     },
 
-    "extends": "airbnb",
+    "extends": ["airbnb", "react-app"],
     "rules": {
         "semi": 2,
         "global-require": 0,
-        "no-unused-expressions": ["error", { "allowTaggedTemplates": true }]
+        "no-unused-expressions": ["error", { "allowTaggedTemplates": true }],
+        "no-unused-vars": 0
         
     },
     "env": {
