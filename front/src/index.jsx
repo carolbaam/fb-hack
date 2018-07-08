@@ -18,11 +18,10 @@ ReactDOM.render((
       <Fabric>
         <Consumer>
           {({ appState, update }) => {
-            console.log(appState.get('token'));
             if (appState.get('token')) {
               return (
                 <Fragment>
-                  <Route exact path="/" component={App} />
+                  <Route exact path="/" component={props => (<App {...props} appState={appState} update={update} />)} />
                   <Route path="/privacy" component={Privacy} />
                 </Fragment>
               );

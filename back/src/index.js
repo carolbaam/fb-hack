@@ -1,26 +1,106 @@
-const micro = require('micro');
-const axios = require('axios');
-const microCors = require('micro-cors')
-const uuid = require('uuid/v1')
-const cors = microCors({ allowMethods: ['POST', 'GET'] })
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const axios = require("axios");
+const uuid = require("uuid/v1");
+const jwt = require('jsonwebtoken');
+var admin = require("firebase-admin");
 
-const endpoint = (lon, lat) => `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&lon=${lon}&lat=${lat}&key=${process.env.NODE_APP_KEY}`;
+var serviceAccount = JSON.parse(process.env.NODE_FIREBASE);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://fb-hack-2edfe.firebaseio.com"
+});
 
-const server = micro(cors(async (req, res) => {
-    if (req.method === 'POST') {
-        const {lon, lat} = await micro.json(req)
-        try {
-            const result = await axios.get(endpoint(lon, lat));
-            micro.send(res, result.status, result.data);
-        } catch (error) {
-            micro.send(res, error.status, error.data);
-        }
-    } else if (req.method === 'GET') {
-        micro.send(res, 200, {csrf: uuid()})
-    } else {
-        micro.send(res, 300, 'unsoported method')
-    }
 
-}));
+const app = express();
 
-server.listen(3000);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+
+const fbApi = axios.create({
+  baseUrl: process.env.NODE_GRAPH_API,
+})
+
+const getTokenEndpoint = (authorization_code) => `https://graph.accountkit.com/v1.1/access_token?grant_type=authorization_code&code=${authorization_code}&access_token=AA|79059249606625|6212912c76cbcde2e03c7732aaee609a`
+
+const account_kit_api_version = 'v1.1';
+const app_id = process.env.NODE_FB_APP_ID;
+const app_secret = process.env.NODE_FB_APP_SECRET;
+const me_endpoint_base_url = 'https://graph.accountkit.com/v1.1/me';
+const token_exchange_base_url = 'https://graph.accountkit.com/v1.1/access_token'; 
+
+const Querystring  = require('querystring');
+
+
+app.get("/me", async (req, res) => {
+  try {
+    const code = req.headers['x-access-token'];
+    const app_access_token = ['AA', app_id, app_secret].join('|');
+    const params = {
+      grant_type: 'authorization_code',
+      code: code,
+      access_token: app_access_token
+    };
+    const token_exchange_url = token_exchange_base_url + '?' + Querystring.stringify(params);
+    const { data: { access_token }} = await axios.get(token_exchange_url);
+    const me_endpoint_url = me_endpoint_base_url + '?access_token=' + access_token;
+    const { data: { email, id }} = await axios.get(me_endpoint_url);
+    const token = jwt.sign({ email, id }, app_secret);
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: error.message });
+  }
+});
+
+// protected routes
+
+app.use((req, res, next) => {
+  try {
+    const code = req.headers['authorization'];
+    const result = jwt.verify(code, app_secret)
+    req.user = result
+    next();
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ msg: error.message });
+  }
+});
+
+const db = admin.firestore();
+const usersCollectionRef = db.collection('users');
+
+app.get('/profile', async (req, res) => {
+  console.log('user', req.user);
+  const setDoc = usersCollectionRef.doc(req.user.id).set({ holo: 'holo' });
+  console.log(setDoc);
+  res.json({ msg: 'ok' });
+});
+
+
+const endpoint = (lon, lat) =>
+  `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&lon=${lon}&lat=${lat}&key=${process.env.NODE_APP_KEY}`;
+
+app.post("/meetups", async (req, res) => {
+  const { lon, lat } = req.body;
+  try {
+    const result = await axios.get(endpoint(lon, lat));
+    res.json(result.data);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json(error.data);
+  }
+});
+
+app.get("/csrf", (req, res) => {
+  res.json({ csrf: uuid() });
+});
+
+
+const PORT = process.env.NODE_PORT || 3000
+
+app.listen(PORT, () => {
+  console.log(`listening on port ${PORT}`);
+});

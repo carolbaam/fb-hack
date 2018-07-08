@@ -45,7 +45,13 @@
     -->
     <script src="https://sdk.accountkit.com/en_US/sdk.js"></script>
     
-    
+    <script>
+      AccountKit_Promise = new Promise((resolve, reject) => {
+        AccountKit_OnInteractive = function () {
+          resolve();
+        };
+      });
+    </script>
         
   </body>
 </html>

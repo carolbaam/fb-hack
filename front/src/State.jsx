@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { Map } from 'immutable';
 
+import api from './api';
+
 const AppContext = React.createContext();
 
 type Props = {
@@ -12,8 +14,9 @@ export class Provider extends Component<Props> {
     appState: Map({ token: localStorage.getItem('token') }),
   }
 
-  update = (appState) => {
-    this.setState(() => ({ appState }));
+  update = (newAppState) => {
+    const { appState } = this.state;
+    this.setState(() => ({ appState: newAppState }));
   }
 
   render() {

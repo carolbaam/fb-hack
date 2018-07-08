@@ -2,9 +2,9 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import api from './api';
+
 // import { withRouter } from 'react-router-dom';
-// https://graph.accountkit.com/v1.3/access_token?grant_type=authorization_code&code=<authorization_code>&access_token=AA|<facebook_app_id>|<app_secret>
-window.AccountKit_OnInteractive = function () {};
 
 type Props = {
   appState: Object,
@@ -20,15 +20,16 @@ class InitAccount extends Component<Props> {
   };
 
   componentDidMount() {
-    axios.get(process.env.REACT_APP_API).then(({ data: { csrf } }) => {
+    api.get('/csrf').then(({ data: { csrf } }) => {
       this.setState(() => ({ csrf }));
-      console.log('csrf', csrf);
-      AccountKit.init({
-        appId: '179059249606625',
-        state: csrf,
-        version: 'v1.1',
-        fbAppEventsEnabled: true,
-        redirect: process.env.REACT_CALLBACK_URL,
+      window.AccountKit_Promise.then(() => {
+        AccountKit.init({
+          appId: '179059249606625',
+          state: csrf,
+          version: 'v1.1',
+          fbAppEventsEnabled: true,
+          redirect: process.env.REACT_CALLBACK_URL,
+        });
       });
     });
   }
@@ -48,9 +49,16 @@ class InitAccount extends Component<Props> {
 
       const { state: { csrf: resCsrf } } = response;
       const { csrf } = this.state;
-      console.log('resCsrf', resCsrf);
-      console.log('csrf', csrf);
-      update(appState.set('token', code));
+
+      api.get('/me', {
+        headers: {
+          'x-access-token': code,
+        },
+      }).then(({ data: { token } }) => {
+        localStorage.setItem('token', token);
+        update(appState.set('token', token));
+      });
+
       // Send code to server to exchange for access token
     } else if (response.status === 'NOT_AUTHENTICATED') {
       // handle authentication failure
@@ -71,7 +79,6 @@ class InitAccount extends Component<Props> {
 
   // email form submission handler
   emailLogin = () => {
-    console.log(AccountKit);
     const { emailAddress } = this.state;
     AccountKit.login('EMAIL', { emailAddress }, this.loginCallback);
   };
