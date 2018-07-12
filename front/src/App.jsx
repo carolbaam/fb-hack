@@ -60,6 +60,30 @@ const SearchContainer = styled.div`
 //   top: 3rem;
 // `;
 
+const ModalContent = styled.div`
+
+  width: 80vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 3rem;
+  .content {
+    overflow: scroll;
+  }
+`;
+
+const genModalContent = (title, content, onClick) => (
+  <ModalContent>
+    <div className="title">
+      {title}
+    </div>
+    <div className="content" dangerouslySetInnerHTML={{ __html: content }} />
+    <div className="actions">
+      <DefaultButton onClick={onClick} text="Ir a meetup" />
+    </div>
+  </ModalContent>
+);
+
 type Props = {
   appState: Object,
   update: Function
@@ -86,7 +110,9 @@ class App extends Component<Props> {
       navigator.geolocation.getCurrentPosition(this.showPosition);
     }
     api.get('/profile').then(({ data }) => {
-      console.log(data);
+      const { appState, update } = this.props;
+      console.log('data.meetups', data.meetups);
+      update(appState.set('meetups', data.meetups));
     });
   }
 
@@ -186,12 +212,12 @@ class App extends Component<Props> {
   }
 
   clickMarker = (el) => {
+    console.log(el);
     this.setState(() => ({
       showModal: true,
-      modalContent: el.name,
+      modalContent: genModalContent(el.name, el.description),
     }));
   }
-
 
   render() {
     const style = {
@@ -246,7 +272,7 @@ class App extends Component<Props> {
             directionalHintFixed
           >
             <CalloutContainer>
-              <DefaultButton onClick={this.onShowMenuClicked} text="Invite Friends" />
+              <DefaultButton onClick={this.onShowMenuClicked} text="Invitar Amigos" />
               <DefaultButton onClick={this.onLogout} text="Logout" />
             </CalloutContainer>
           </Callout>

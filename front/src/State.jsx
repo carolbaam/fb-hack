@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Map } from 'immutable';
+import isEqual from 'lodash/isEqual';
 
 import api from './api';
 
@@ -15,8 +16,14 @@ export class Provider extends Component<Props> {
   }
 
   update = (newAppState) => {
-    const { appState } = this.state;
-    this.setState(() => ({ appState: newAppState }));
+    try {
+      const { appState } = this.state;
+      if (!isEqual(newAppState.toJS(), appState.toJS())) {
+        this.setState(() => ({ appState: newAppState }));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   render() {

@@ -73,10 +73,14 @@ const db = admin.firestore();
 const usersCollectionRef = db.collection('users');
 
 app.get('/profile', async (req, res) => {
-  console.log('user', req.user);
-  const setDoc = usersCollectionRef.doc(req.user.id).set({ holo: 'holo' });
-  console.log(setDoc);
-  res.json({ msg: 'ok' });
+  const getDoc = await usersCollectionRef.doc(req.user.id).get();
+  if (!getDoc.exists) {
+    const setDoc = await usersCollectionRef.doc(req.user.id).set({ meetups: [] });
+    res.json(setDoc);
+  } else {
+    res.json(getDoc.data());
+  }
+
 });
 
 
