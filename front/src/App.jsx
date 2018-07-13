@@ -11,8 +11,9 @@ import { Modal } from 'office-ui-fabric-react/lib/Modal';
 import { IconButton, DefaultButton } from 'office-ui-fabric-react/lib/Button';
 import { createRef } from 'office-ui-fabric-react/lib/Utilities';
 import { Callout, DirectionalHint } from 'office-ui-fabric-react/lib/Callout';
-
 import Fuse from 'fuse.js';
+import MeetMap from './MeetMap';
+
 
 import api from './api';
 import icon from './img/mapbox-icon.png';
@@ -72,21 +73,11 @@ const ModalContent = styled.div`
   }
 `;
 
-const genModalContent = (title, content, onClick) => (
-  <ModalContent>
-    <div className="title">
-      {title}
-    </div>
-    <div className="content" dangerouslySetInnerHTML={{ __html: content }} />
-    <div className="actions">
-      <DefaultButton onClick={onClick} text="Ir a meetup" />
-    </div>
-  </ModalContent>
-);
 
 type Props = {
   appState: Object,
-  update: Function
+  update: Function,
+  history:Object
 }
 
 class App extends Component<Props> {
@@ -120,6 +111,12 @@ class App extends Component<Props> {
   componentWillUnmount() {
     this.map.remove();
   }
+
+  onClickModal = (props) => {
+    const { history } = this.props;
+    history.push('/meetmap');
+  };
+
 
   onSearch = (value) => {
     const { markers } = this.state;
@@ -178,6 +175,7 @@ class App extends Component<Props> {
     this.setState({ isCalloutVisible: false });
   }
 
+
   closeModal = () => {
     this.setState(() => ({ showModal: false }));
   }
@@ -211,11 +209,23 @@ class App extends Component<Props> {
     });
   }
 
+
   clickMarker = (el) => {
     console.log(el);
     this.setState(() => ({
       showModal: true,
-      modalContent: genModalContent(el.name, el.description),
+      modalContent: (
+      // genModalContent(el.name, el.description),
+        <ModalContent>
+          <div className="title">
+            {el.name}
+          </div>
+          <div className="content" dangerouslySetInnerHTML={{ __html: el.description }} />
+          <div className="actions">
+            <DefaultButton onClick={this.onClickModal} text="Ir a meetup" />
+          </div>
+        </ModalContent>
+      ),
     }));
   }
 

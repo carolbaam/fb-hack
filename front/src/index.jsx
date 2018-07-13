@@ -9,6 +9,7 @@ import Login from './Login';
 import App from './App';
 import Privacy from './Privacy';
 import registerServiceWorker from './registerServiceWorker';
+import MeetMap from './MeetMap';
 
 initializeIcons();
 
@@ -22,6 +23,7 @@ ReactDOM.render((
               return (
                 <Fragment>
                   <Route exact path="/" component={props => (<App {...props} appState={appState} update={update} />)} />
+                  <Route path="/meetmap" component={MeetMap} />
                   <Route path="/privacy" component={Privacy} />
                 </Fragment>
               );

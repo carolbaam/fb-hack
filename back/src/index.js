@@ -55,7 +55,12 @@ app.get("/me", async (req, res) => {
   }
 });
 
+app.get("/csrf", (req, res) => {
+  res.json({ csrf: uuid() });
+  console.log(csrf)
+});
 // protected routes
+
 
 app.use((req, res, next) => {
   try {
@@ -98,9 +103,7 @@ app.post("/meetups", async (req, res) => {
   }
 });
 
-app.get("/csrf", (req, res) => {
-  res.json({ csrf: uuid() });
-});
+
 
 
 const PORT = process.env.NODE_PORT || 3000
