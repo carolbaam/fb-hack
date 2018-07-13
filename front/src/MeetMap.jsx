@@ -23,31 +23,14 @@ export default class MeetMap extends Component {
 
   showPosition = ({ coords: { longitude, latitude } }) => {
     this.map.setCenter([longitude, latitude]);
-    api.post('/meetups', { lon: longitude, lat: latitude }).then((res) => {
-      const events = get(res, 'data.events', []);
-      let markers = [];
-      filter(events,
-        event => (get(event, 'venue.lon') !== undefined) && (get(event, 'venue.lat') !== undefined)).forEach((event) => {
-        // create a HTML element for each feature
-        const el = document.createElement('div');
-        el.className = 'marker';
-        const lon = get(event, 'venue.lon');
-        const lat = get(event, 'venue.lat');
-        el.addEventListener('click', () => {
-          this.clickMarker(event);
-        });
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([lon, lat])
-          .addTo(this.map);
-        markers = markers.concat({
-          domEl: marker,
-          event,
-        });
-      });
-      this.setState(() => ({ markers }));
-    }).catch((err) => {
-      console.error(err);
-    });
+
+    const lon = -99.095312;
+    const lat = 18.741265;
+
+    const marker = new mapboxgl.Marker()
+      .setLngLat([lon, lat])
+      .addTo(this.map);
+    this.setState(() => ({ marker }));
   }
 
 
