@@ -70,7 +70,7 @@ app.use((req, res, next) => {
     next();
   } catch(error) {
     console.error(error);
-    res.status(500).json({ msg: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -81,11 +81,27 @@ app.get('/profile', async (req, res) => {
   const getDoc = await usersCollectionRef.doc(req.user.id).get();
   if (!getDoc.exists) {
     const setDoc = await usersCollectionRef.doc(req.user.id).set({ meetups: [] });
-    res.json(setDoc);
+    res.json({ meetups: [] });
   } else {
     res.json(getDoc.data());
   }
+});
 
+const rallyPointCollectionRef = db.collection('rallypoint');
+
+app.get('/rallypoint', async (req, res) => {
+  const getDoc = await rallyPointCollectionRef.doc(req.query.id).get();
+  if (!getDoc.exists) {
+    res.json({ empty: true });
+  } else {
+    res.json(getDoc.data());
+  }
+});
+
+app.post('/rallypoint', async (req, res) => {
+  const { lng, lat, id } = req.body;
+  const setDoc = await rallyPointCollectionRef.doc(id).set({ lng, lat });
+  res.json({ lng, lat });
 });
 
 

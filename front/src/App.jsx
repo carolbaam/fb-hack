@@ -77,7 +77,6 @@ const ModalContent = styled.div`
 type Props = {
   appState: Object,
   update: Function,
-  history:Object
 }
 
 class App extends Component<Props> {
@@ -102,7 +101,6 @@ class App extends Component<Props> {
     }
     api.get('/profile').then(({ data }) => {
       const { appState, update } = this.props;
-      console.log('data.meetups', data.meetups);
       update(appState.set('meetups', data.meetups));
     });
   }
@@ -112,9 +110,9 @@ class App extends Component<Props> {
     this.map.remove();
   }
 
-  onClickModal = (props) => {
-    const { history } = this.props;
-    history.push('/meetmap');
+  onClickModal = (id) => {
+    console.log(id);
+    window.location = `/meetmap/${id}`;
   };
 
 
@@ -222,7 +220,7 @@ class App extends Component<Props> {
           </div>
           <div className="content" dangerouslySetInnerHTML={{ __html: el.description }} />
           <div className="actions">
-            <DefaultButton onClick={this.onClickModal} text="Ir a meetup" />
+            <DefaultButton onClick={() => { this.onClickModal(el.id); }} text="Ir a meetup" />
           </div>
         </ModalContent>
       ),

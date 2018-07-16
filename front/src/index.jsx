@@ -23,7 +23,7 @@ ReactDOM.render((
               return (
                 <Fragment>
                   <Route exact path="/" component={props => (<App {...props} appState={appState} update={update} />)} />
-                  <Route path="/meetmap" component={MeetMap} />
+                  <Route path="/meetmap/:id" component={MeetMap} />
                   <Route path="/privacy" component={Privacy} />
                 </Fragment>
               );
