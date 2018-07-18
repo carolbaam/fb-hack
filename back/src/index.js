@@ -57,7 +57,6 @@ app.get("/me", async (req, res) => {
 
 app.get("/csrf", (req, res) => {
   res.json({ csrf: uuid() });
-  console.log(csrf)
 });
 // protected routes
 
