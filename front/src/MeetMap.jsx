@@ -32,11 +32,16 @@ export default class MeetMap extends Component {
     if (navigator.geolocation) {
       const id = get(this, 'props.match.params.id');
       api.get(`/rallypoint?id=${id}`).then((res) => {
-        this.setState({ empty: get(res, 'data.empty', false) }, () => {
-          navigator.geolocation.getCurrentPosition(this.showPosition);
-          const marker = new mapboxgl.Marker()
-            .setLngLat([res.data.lng, res.data.lat])
-            .addTo(this.map);
+        console.log('red', res);
+        const empty = get(res, 'data.empty', false);
+        this.setState({ empty }, () => {
+          if (!empty) {
+            const marker = new mapboxgl.Marker()
+              .setLngLat([res.data.lng, res.data.lat])
+              .addTo(this.map);
+          } else {
+            navigator.geolocation.getCurrentPosition(this.showPosition);
+          }
         });
       });
     }
