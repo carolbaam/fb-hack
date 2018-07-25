@@ -6,12 +6,17 @@ const uuid = require("uuid/v1");
 const jwt = require('jsonwebtoken');
 var admin = require("firebase-admin");
 
-var serviceAccount = JSON.parse(process.env.NODE_FIREBASE);
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://fb-hack-2edfe.firebaseio.com"
-});
+let db, usersCollectionRef, rallyPointCollectionRef;
 
+axios.get(process.env.NODE_FIREBASE).then(({ data: serviceAccount}) => {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://fb-hack-2edfe.firebaseio.com"
+  });
+  db = admin.firestore();
+  usersCollectionRef = db.collection('users');
+  rallyPointCollectionRef = db.collection('rallypoint');
+});
 
 const app = express();
 
@@ -73,9 +78,6 @@ app.use((req, res, next) => {
   }
 });
 
-const db = admin.firestore();
-const usersCollectionRef = db.collection('users');
-
 app.get('/profile', async (req, res) => {
   const getDoc = await usersCollectionRef.doc(req.user.id).get();
   if (!getDoc.exists) {
@@ -85,8 +87,6 @@ app.get('/profile', async (req, res) => {
     res.json(getDoc.data());
   }
 });
-
-const rallyPointCollectionRef = db.collection('rallypoint');
 
 app.get('/rallypoint', async (req, res) => {
   const getDoc = await rallyPointCollectionRef.doc(req.query.id).get();
