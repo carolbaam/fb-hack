@@ -73,3 +73,5 @@ build/
 
 # Serverless directories
 .serverless
+
+.envrc

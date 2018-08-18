@@ -4,15 +4,21 @@ import styled, { injectGlobal } from 'styled-components';
 import axios from 'axios';
 import get from 'lodash/get';
 import filter from 'lodash/filter';
+import difference from 'lodash/difference';
 
 import { SearchBox } from 'office-ui-fabric-react/lib/SearchBox';
 import { Modal } from 'office-ui-fabric-react/lib/Modal';
+import { IconButton, DefaultButton } from 'office-ui-fabric-react/lib/Button';
+import { createRef } from 'office-ui-fabric-react/lib/Utilities';
+import { Callout, DirectionalHint } from 'office-ui-fabric-react/lib/Callout';
+import Fuse from 'fuse.js';
+import MeetMap from './MeetMap';
 
-// import List from './List';
+
+import api from './api';
 import icon from './img/mapbox-icon.png';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
-// const endpoint = (lon, lat) => `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&lon=${lon}&lat=${lat}&key=${process.env.REACT_APP_KEY}`;
 
 injectGlobal`
   .marker {
@@ -23,6 +29,19 @@ injectGlobal`
     border-radius: 50%;
     cursor: pointer;
   }
+`;
+
+const StyledIconButton = styled.div`
+  position: fixed;
+  z-index: 2;
+  right: 3rem;
+  top: 1rem;
+  background-color: white;
+`;
+
+const CalloutContainer = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const SearchContainer = styled.div`
@@ -42,12 +61,33 @@ const SearchContainer = styled.div`
 //   top: 3rem;
 // `;
 
-class App extends Component {
+const ModalContent = styled.div`
+
+  width: 80vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 3rem;
+  .content {
+    overflow: scroll;
+  }
+`;
+
+
+type Props = {
+  appState: Object,
+  update: Function,
+}
+
+class App extends Component<Props> {
+  menuButtonElement = null;
+
   state = {
     markers: [],
     showModal: false,
     searchValue: '',
     modalContent: '',
+    isCalloutVisible: false,
   }
 
   componentDidMount() {
@@ -59,6 +99,10 @@ class App extends Component {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(this.showPosition);
     }
+    api.get('/profile').then(({ data }) => {
+      const { appState, update } = this.props;
+      update(appState.set('meetups', data.meetups));
+    });
   }
 
 
@@ -66,17 +110,40 @@ class App extends Component {
     this.map.remove();
   }
 
+  onClickModal = (id) => {
+    console.log(id);
+    window.location = `/meetmap/${id}`;
+  };
+
+
   onSearch = (value) => {
     const { markers } = this.state;
     const inputValue = value.trim().toLowerCase();
-    const inputLength = inputValue.length;
     this.setState(() => ({ searchValue: value }));
-    const elsToAdd = markers.filter(
-      ({ event }) => event.name.toLowerCase().slice(0, inputLength) === inputValue,
-    );
-    const elsToRem = markers.filter(
-      ({ event }) => event.name.toLowerCase().slice(0, inputLength) !== inputValue,
-    );
+
+    if (inputValue === '') {
+      markers.forEach(({ domEl }) => {
+        domEl.addTo(this.map);
+      });
+      return;
+    }
+
+    const options = {
+      shouldSort: true,
+      threshold: 0.6,
+      location: 0,
+      distance: 100,
+      maxPatternLength: 32,
+      minMatchCharLength: 1,
+      keys: [
+        'event.name',
+      ],
+    };
+
+    const fuse = new Fuse(markers, options);
+    const elsToAdd = fuse.search(inputValue);
+
+    const elsToRem = difference(markers, elsToAdd);
 
     elsToAdd.forEach(({ domEl }) => {
       domEl.addTo(this.map);
@@ -87,15 +154,33 @@ class App extends Component {
     });
   }
 
+  onShowMenuClicked = () => {
+    const { isCalloutVisible } = this.state;
+    this.setState({
+      isCalloutVisible: !isCalloutVisible,
+    });
+  }
+
+  onLogout = () => {
+    requestAnimationFrame(() => {
+      const { appState, update } = this.props;
+      localStorage.removeItem('token');
+      update(appState.set('token', undefined));
+    });
+  }
+
+  onDismiss= () => {
+    this.setState({ isCalloutVisible: false });
+  }
+
+
   closeModal = () => {
     this.setState(() => ({ showModal: false }));
   }
 
   showPosition = ({ coords: { longitude, latitude } }) => {
     this.map.setCenter([longitude, latitude]);
-    console.log('post', process.env.REACT_APP_API);
-    axios.post(process.env.REACT_APP_API, { lon: longitude, lat: latitude }).then((res) => {
-      console.log('res', res);
+    api.post('/meetups', { lon: longitude, lat: latitude }).then((res) => {
       const events = get(res, 'data.events', []);
       let markers = [];
       filter(events,
@@ -122,13 +207,25 @@ class App extends Component {
     });
   }
 
+
   clickMarker = (el) => {
+    console.log(el);
     this.setState(() => ({
       showModal: true,
-      modalContent: el.name,
+      modalContent: (
+      // genModalContent(el.name, el.description),
+        <ModalContent>
+          <div className="title">
+            {el.name}
+          </div>
+          <div className="content" dangerouslySetInnerHTML={{ __html: el.description }} />
+          <div className="actions">
+            <DefaultButton onClick={() => { this.onClickModal(el.id); }} text="Ir a meetup" />
+          </div>
+        </ModalContent>
+      ),
     }));
   }
-
 
   render() {
     const style = {
@@ -137,7 +234,9 @@ class App extends Component {
       bottom: 0,
       width: '100%',
     };
-    const { searchValue, showModal, modalContent } = this.state;
+    const {
+      searchValue, showModal, modalContent, isCalloutVisible,
+    } = this.state;
     return (
       <Fragment>
         <SearchContainer>
@@ -151,6 +250,16 @@ class App extends Component {
             />
           </div>
         </SearchContainer>
+        <StyledIconButton innerRef={(menuButton) => { (this.menuButtonElement = menuButton); }}>
+          <IconButton
+            // disabled={disabled}
+            // checked={checked}
+            onClick={this.onShowMenuClicked}
+            iconProps={{ iconName: 'CollapseMenu' }}
+            title="CollapseMenu"
+            ariaLabel="CollapseMenu"
+          />
+        </StyledIconButton>
         <div style={style} ref={(el) => { this.mapContainer = el; }} />
         <Modal
           isOpen={showModal}
@@ -160,7 +269,23 @@ class App extends Component {
         >
           {modalContent}
         </Modal>
-        {}
+        {isCalloutVisible ? (
+          <Callout
+            onDismiss={this.onDismiss}
+            target={this.menuButtonElement}
+            directionalHint={DirectionalHint.topRightEdge}
+            coverTarget
+            isBeakVisible={false}
+            gapSpace={0}
+            directionalHintFixed
+          >
+            <CalloutContainer>
+              <DefaultButton onClick={this.onShowMenuClicked} text="Invitar Amigos" />
+              <DefaultButton onClick={this.onLogout} text="Logout" />
+            </CalloutContainer>
+          </Callout>
+
+        ) : null}
       </Fragment>
     );
   }
