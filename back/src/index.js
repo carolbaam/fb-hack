@@ -55,7 +55,7 @@ app.get("/me", async (req, res) => {
     const token = jwt.sign({ email, id }, app_secret);
     res.json({ token });
   } catch (error) {
-    console.error(error);
+    console.error(error.response.data);
     res.status(500).json({ msg: error.message });
   }
 });
